@@ -26,5 +26,10 @@ namespace Assets.Code.ai
             _transform.rotation = Quaternion.Euler(0, _kinematic.Orientation * 90, 0);
         }
 
+        public void ChangePosition(Vector2 position)
+        {
+            _kinematic.Position = position;
+            _transform.position = new Vector3(_kinematic.Position.x * 2, _transform.position.y, _kinematic.Position.y * 2);
+        }
     }
 }

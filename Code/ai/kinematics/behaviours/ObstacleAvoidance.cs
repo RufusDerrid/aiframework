@@ -1,4 +1,5 @@
 ﻿using Assets.Code.world;
+using UnityEngine;
 
 namespace Assets.Code.ai.kinematics.behaviours
 {
@@ -6,15 +7,21 @@ namespace Assets.Code.ai.kinematics.behaviours
     {
         private World _world;
 
-        public ObstacleAvoidance(Kinematic character, Kinematic target, float maxSpeed) 
+        public ObstacleAvoidance(Kinematic character, float maxSpeed, World world) 
             : base(character, new Kinematic(), maxSpeed)
         {
+            _world = world;
         }
 
         public override SteeringOutput GetSteering()
         {
             var rayVector = _character.Velocity;
             rayVector.Normalize();
+
+            if(rayVector.x == 1 && _character.Position.x >= 1 && _character.Position.y >= 1)
+            {
+                Debug.Log("");
+            }
 
             var nextPosition = _character.Position + rayVector;
 
