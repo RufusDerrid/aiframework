@@ -4,36 +4,27 @@ namespace Assets.Code.ai.kinematics.behaviours
 {
     public class Face : Align
     {
-        private Kinematic _originalTarget;
+        private Agent _originalTarget;
 
-        public Face(Kinematic character, Kinematic target, float maxRotation) 
-            : base(character, target, maxRotation)
+        public Face(Agent character, Agent target, float maxRotation)
+            : base(character, null, maxRotation)
         {
             _originalTarget = target;
+            var faceTarget = new GameObject("faceTarget");
+            _target = new Agent(faceTarget.transform);
         }
 
         public override SteeringOutput GetSteering()
         {
-            var direction = _originalTarget.Position - _character.Position;
+            var direction = _originalTarget.Transform.position - _character.Transform.position;
             if (direction.sqrMagnitude == 0)
             {
                 return new SteeringOutput();
             }
 
-            _target = new Kinematic();
-            var orientation = Mathf.Atan2(-direction.y, direction.x) * Mathf.Rad2Deg;
+            var rotation = Mathf.Atan2(-direction.z, direction.x) * Mathf.Rad2Deg;
 
-            orientation = Mathf.Round(orientation / 90);
-
-            if(orientation < 0)
-            {
-                orientation += 4;
-            } else if(orientation > 3)
-            {
-                orientation %= 4;
-            }
-
-            _target.Orientation = orientation;
+            _target.Transform.rotation = Quaternion.Euler(new Vector3(0, rotation, 0));
 
             return base.GetSteering();
         }

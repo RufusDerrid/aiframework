@@ -1,35 +1,33 @@
-﻿using Assets.Code.ai.kinematics;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Assets.Code.ai
 {
     public class Agent
     {
-        public Kinematic Kinematic {get { return _kinematic; } }
-
-        private Transform _transform;
-        private Kinematic _kinematic;
+        public Transform Transform;
+        public Vector3 Velocity;
+        //private float _rotation;
 
         public Agent(Transform transform)
         {
-            _transform = transform;
-            _kinematic = new Kinematic();
-            _kinematic.Position = new Vector2(_transform.position.x / 2, _transform.position.z / 2);
-            _kinematic.Orientation = _transform.rotation.eulerAngles.y / 90;
+            Transform = transform;
         }
 
         public void Update(SteeringOutput steering)
         {
-            _kinematic.Update(steering);
-            _transform.position = new Vector3(_kinematic.Position.x * 2, _transform.position.y, _kinematic.Position.y * 2);
-            Debug.Log(_kinematic.Orientation);
-            _transform.rotation = Quaternion.Euler(0, _kinematic.Orientation * 90, 0);
-        }
+            Transform.position += Velocity * Time.deltaTime;
 
-        public void ChangePosition(Vector2 position)
-        {
-            _kinematic.Position = position;
-            _transform.position = new Vector3(_kinematic.Position.x * 2, _transform.position.y, _kinematic.Position.y * 2);
+            var eulers = Transform.rotation.eulerAngles;
+            var y = eulers.y + steering.Rotation * Time.deltaTime;
+            //_transform.rotation = Quaternion.Euler(new Vector3(0, y, 0));
+            var vec = new Vector3(0, steering.Rotation, 0) * Time.deltaTime;
+            var vec2 = Vector3.up * Time.deltaTime;
+            Transform.Rotate(Vector3.up, steering.Rotation * Time.deltaTime);
+
+            //_velocity += steering.Velocity * Time.deltaTime;
+            //_rotation += steering.Rotation * Time.deltaTime;
+
+            Velocity = steering.Velocity;
         }
     }
 }

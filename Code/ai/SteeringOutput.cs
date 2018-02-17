@@ -4,7 +4,7 @@ namespace Assets.Code.ai
 {
     public class SteeringOutput
     {
-        public Vector2 Velocity;
+        public Vector3 Velocity;
         public float Rotation;
 
         public SteeringOutput()
@@ -13,7 +13,7 @@ namespace Assets.Code.ai
             Rotation = 0.0f;
         }
 
-        public SteeringOutput(Vector2 velocity, float rotation)
+        public SteeringOutput(Vector3 velocity, float rotation)
         {
             Velocity = velocity;
             Rotation = rotation;
@@ -21,7 +21,7 @@ namespace Assets.Code.ai
 
         public void Clear()
         {
-            Velocity = Vector2.zero;
+            Velocity = Vector3.zero;
             Rotation = 0;
         }
 

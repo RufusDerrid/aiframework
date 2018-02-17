@@ -1,15 +1,13 @@
-﻿using UnityEngine;
-
-namespace Assets.Code.ai.kinematics.behaviours
+﻿namespace Assets.Code.ai.kinematics.behaviours
 {
     public class Arrive : ISteeringBehavior
     {
-        private Kinematic _character;
-        private Kinematic _target;
+        private Agent _character;
+        private Agent _target;
         private float _maxSpeed;
         private float _radius;
 
-        public Arrive(Kinematic character, Kinematic target, float maxSpeed, float radius)
+        public Arrive(Agent character, Agent target, float maxSpeed, float radius)
         {
             _character = character;
             _target = target;
@@ -21,30 +19,19 @@ namespace Assets.Code.ai.kinematics.behaviours
         {
             var steering = new SteeringOutput();
 
-            var distance = _target.Position - _character.Position;
-            
-            if (distance.magnitude <= _radius)
+            steering.Velocity = _target.Transform.position - _character.Transform.position;
+
+            if (steering.Velocity.magnitude <= _radius)
             {
-                return steering;
+                return new SteeringOutput();
             }
 
-            if (distance.magnitude > _maxSpeed)
+            if (steering.Velocity.magnitude > _maxSpeed)
             {
-                distance.Normalize();
-
-                distance.x = Mathf.Round(distance.x);
-                distance.y = Mathf.Round(distance.y);
-
-                if (distance.x != 0)
-                {
-                    distance.y = 0;
-                }
-
-                distance *= _maxSpeed;
+                steering.Velocity.Normalize();
+                steering.Velocity *= _maxSpeed;
             }
 
-            steering.Velocity = distance;
-           
             return steering;
         }
     }

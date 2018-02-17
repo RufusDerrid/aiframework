@@ -1,14 +1,12 @@
-﻿using UnityEngine;
-
-namespace Assets.Code.ai.kinematics.behaviours
+﻿namespace Assets.Code.ai.kinematics.behaviours
 {
     public class Flee : ISteeringBehavior
     {
-        private Kinematic _character;
-        private Kinematic _target;
+        private Agent _character;
+        private Agent _target;
         private float _maxSpeed;
 
-        public Flee(Kinematic character, Kinematic target, float maxSpeed)
+        public Flee(Agent character, Agent target, float maxSpeed)
         {
             _character = character;
             _target = target;
@@ -19,16 +17,8 @@ namespace Assets.Code.ai.kinematics.behaviours
         {
             SteeringOutput steering = new SteeringOutput();
 
-            steering.Velocity = _character.Position - _target.Position;
+            steering.Velocity = _character.Transform.position - _target.Transform.position;
             steering.Velocity.Normalize();
-
-            steering.Velocity.x = Mathf.Round(steering.Velocity.x);
-            steering.Velocity.y = Mathf.Round(steering.Velocity.y);
-
-            if (steering.Velocity.x != 0)
-            {
-                steering.Velocity.y = 0;
-            }
 
             steering.Velocity *= _maxSpeed;
 

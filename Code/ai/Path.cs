@@ -1,25 +1,25 @@
-﻿using Assets.Code.world;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace Assets.Code.ai
 {
     public class Path
     {
-        private List<Cell> _pointCells;
+        private List<Transform> _points;
         private int _currentIndex = 0;
 
-        public Path(List<Cell> pointCells)
+        public Path(List<Transform> points)
         {
-            _pointCells = pointCells;
+            _points = points;
         }
 
-        public Cell GetPointCell()
+        public Transform GetPoint()
         {
-            if (_pointCells != null && _pointCells.Count > 0 && _currentIndex < _pointCells.Count)
+            if (_points != null && _points.Count > 0 && _currentIndex < _points.Count)
             {
-                var position = _pointCells[_currentIndex];
+                var transform = _points[_currentIndex];
                 _currentIndex++;
-                return position;
+                return transform;
             }
 
             return null;

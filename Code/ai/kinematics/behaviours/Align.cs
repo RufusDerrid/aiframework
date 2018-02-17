@@ -5,11 +5,11 @@ namespace Assets.Code.ai.kinematics.behaviours
 {
     public class Align : ISteeringBehavior
     {
-        protected Kinematic _character;
-        protected Kinematic _target;
+        protected Agent _character;
+        protected Agent _target;
         private float _maxRotation;
 
-        public Align(Kinematic character, Kinematic target, float maxRotation)
+        public Align(Agent character, Agent target, float maxRotation)
         {
             _character = character;
             _target = target;
@@ -20,16 +20,23 @@ namespace Assets.Code.ai.kinematics.behaviours
         {
             var steering = new SteeringOutput();
 
-            var rotation = Mathf.Abs(_character.Orientation - _target.Orientation);
+            var targetY = MapToRange(_target.Transform.rotation.eulerAngles.y);
+            var charY = MapToRange(_character.Transform.rotation.eulerAngles.y);
+            var rotation = targetY - charY;
 
-            if(rotation > _maxRotation)
-            {
-                rotation = _maxRotation;
-            }
-
-            steering.Rotation = rotation;
+            steering.Rotation = (rotation / Mathf.Abs(rotation)) * _maxRotation;
 
             return steering;
+        }
+
+        private float MapToRange(float rotation)
+        {
+            if (rotation > 180)
+            {
+                rotation = rotation % 180 - 180;
+            }
+
+            return rotation;
         }
     }
 }

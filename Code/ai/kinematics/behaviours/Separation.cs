@@ -1,16 +1,15 @@
 ﻿using System.Collections.Generic;
-using UnityEngine;
 
 namespace Assets.Code.ai.kinematics.behaviours
 {
     public class Separation : ISteeringBehavior
     {
-        private Kinematic _character;
-        private List<Kinematic> _targets;
+        private Agent _character;
+        private List<Agent> _targets;
         private float _maxSpeed;
         private float _treshold;
 
-        public Separation(Kinematic character, List<Kinematic> targets, float maxSpeed, float treshold)
+        public Separation(Agent character, List<Agent> targets, float maxSpeed, float treshold)
         {
             _character = character;
             _targets = targets;
@@ -24,23 +23,15 @@ namespace Assets.Code.ai.kinematics.behaviours
 
             foreach (var target in _targets)
             {
-                var direction = _character.Position - target.Position;
+                var direction = _character.Transform.position - target.Transform.position;
                 var distance = direction.magnitude;
-                if(distance < _treshold)
+                if (distance < _treshold)
                 {
                     steering.Velocity += direction;
                 }
             }
 
             steering.Velocity.Normalize();
-
-            steering.Velocity.x = Mathf.Round(steering.Velocity.x);
-            steering.Velocity.y = Mathf.Round(steering.Velocity.y);
-
-            if (steering.Velocity.x != 0)
-            {
-                steering.Velocity.y = 0;
-            }
 
             steering.Velocity *= _maxSpeed;
 

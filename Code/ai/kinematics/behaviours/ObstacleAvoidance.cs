@@ -5,34 +5,34 @@ namespace Assets.Code.ai.kinematics.behaviours
 {
     public class ObstacleAvoidance : Seek
     {
-        private World _world;
+        private float _avoidDistance;
+        private float _lookahead;
 
-        public ObstacleAvoidance(Kinematic character, float maxSpeed, World world) 
-            : base(character, new Kinematic(), maxSpeed)
+        public ObstacleAvoidance(Agent character, float avoidDistance, float lookahead, float maxSpeed)
+            : base(character, null, maxSpeed)
         {
-            _world = world;
+            _avoidDistance = avoidDistance;
+            _lookahead = lookahead;
+            var proxyTarget = new GameObject("proxyTarget");
+            _target = new Agent(proxyTarget.transform);
         }
 
         public override SteeringOutput GetSteering()
         {
             var rayVector = _character.Velocity;
             rayVector.Normalize();
+            rayVector *= _lookahead;
 
-            if(rayVector.x == 1 && _character.Position.x >= 1 && _character.Position.y >= 1)
+            RaycastHit hit;
+            Ray ray = new Ray(_character.Transform.position, rayVector);
+            if (Physics.Raycast(ray, out hit))
             {
-                Debug.Log("");
+                _target.Transform.position = hit.point + hit.normal * _avoidDistance;
             }
-
-            var nextPosition = _character.Position + rayVector;
-
-            if(_world.CanWalk(nextPosition))
+            else
             {
                 return new SteeringOutput();
             }
-
-            var nearestWalkableCell = _world.GetNearestWalkableCell(_character.Position, nextPosition);
-
-            _target.Position = nearestWalkableCell.Position;
 
             return base.GetSteering();
         }
