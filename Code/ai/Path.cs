@@ -24,5 +24,11 @@ namespace Assets.Code.ai
 
             return null;
         }
+
+        public void AddNiewPoints(List<Transform> points)
+        {
+            _points = points;
+            _currentIndex = 0;
+        }
     }
 }

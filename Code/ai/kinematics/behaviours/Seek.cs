@@ -1,4 +1,6 @@
-﻿namespace Assets.Code.ai.kinematics.behaviours
+﻿using UnityEngine;
+
+namespace Assets.Code.ai.kinematics.behaviours
 {
     public class Seek : ISteeringBehavior
     {
@@ -17,7 +19,8 @@
         {
             SteeringOutput steering = new SteeringOutput();
 
-            steering.Velocity = _target.Transform.position - _character.Transform.position;
+            var distance = _target.Transform.position - _character.Transform.position;
+            steering.Velocity = new Vector3(distance.x, 0, distance.z);
             steering.Velocity.Normalize();
 
             steering.Velocity *= _maxSpeed;

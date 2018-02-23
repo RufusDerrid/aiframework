@@ -1,9 +1,11 @@
-﻿namespace Assets.Code.ai.kinematics.behaviours
+﻿using UnityEngine;
+
+namespace Assets.Code.ai.kinematics.behaviours
 {
     public class Arrive : ISteeringBehavior
     {
-        private Agent _character;
-        private Agent _target;
+        protected Agent _character;
+        protected Agent _target;
         private float _maxSpeed;
         private float _radius;
 
@@ -15,11 +17,12 @@
             _radius = radius;
         }
 
-        public SteeringOutput GetSteering()
+        public virtual SteeringOutput GetSteering()
         {
             var steering = new SteeringOutput();
 
-            steering.Velocity = _target.Transform.position - _character.Transform.position;
+            var distance = _target.Transform.position - _character.Transform.position;
+            steering.Velocity = new Vector3(distance.x, 0, distance.z);
 
             if (steering.Velocity.magnitude <= _radius)
             {
