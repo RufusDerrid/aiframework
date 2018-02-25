@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Assets.Code.world;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
@@ -57,6 +58,30 @@ namespace Assets.Code.ai.pathfinding
             catch (Exception e)
             {
                 Debug.LogException(e);
+            }
+        }
+
+        public void ParseFromMap(List<Cell> map)
+        {
+            _nodes.Clear();
+            _connections.Clear();
+
+            int id = 0;
+
+            foreach (var cell in map)
+            {
+                if (cell.IsWalkable)
+                {
+                    var cellPos = cell.Position;
+                    _nodes.Add(new Node(id, new Vector2(cellPos.x, cellPos.z)));
+                    id++;
+                }
+            }
+
+            foreach (var node in _nodes)
+            {
+                var connections = CreateConnections(node, _nodes, 1.0f);
+                _connections.Add(node.GetId(), connections);
             }
         }
 

@@ -4,18 +4,32 @@ namespace Assets.Code.world
 {
     public class Cell
     {
-        public Vector2 Position { get; private set; }
+        public Vector3 Position { get { return _gameObject.transform.position; } }
+        public GameObject GameObject { get { return _gameObject; } }
 
         private bool _walkable;
-        private Transform _transform;
+        private GameObject _gameObject;
 
-        public Cell(Transform transform, bool walkable)
+        public Cell(GameObject gameObject, bool walkable)
         {
-            _transform = transform;
-            Position = new Vector2(_transform.position.x / 2, _transform.position.z / 2);
+            _gameObject = gameObject;
             _walkable = walkable;
         }
 
         public bool IsWalkable { get { return _walkable; } }
+
+        public void ChangeColor(Color color)
+        {
+            var rend = _gameObject.GetComponent<Renderer>();
+            if (rend != null)
+            {
+                rend.material.color = color;
+            }
+        }
+
+        public void Dispose()
+        {
+            GameObject.Destroy(_gameObject);
+        }
     }
 }

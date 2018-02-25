@@ -2,49 +2,94 @@
 using Assets.Code.ai;
 using Assets.Code.ai.kinematics.behaviours;
 using Assets.Code.ai.pathfinding;
+using Assets.Code.world;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class PathFollowingScene : MonoBehaviour
 {
     public Transform CharacterTransform;
+    public Transform MonsterTransform;
+
     public List<Transform> PointCellsTransforms;
     public string Map = "new.map";
     public GameObject VertexPrefab;
     public GameObject ObstaclePrefab;
+    public GameObject KeyPrefab;
+    public GameObject DoorPrefab;
     public int CellSize = 10;
-    public GameObject CubsGenPrefab;
+    //public GameObject CubsGenPrefab;
 
     private Assets.Code.ai.Path _path;
+    private Assets.Code.ai.Path _monsterPath;
     private FollowPath _followPath;
+    private FollowPath _monsterFollowPath;
     private Agent _character;
+    private Agent _monster;
     private Graph _graph;
-    private CubesGenerator _cubesGen;
+    //private CubesGenerator _cubesGen;
 
-    private List<GameObject> _map;
+    private List<Cell> _map;
+    private float _time;
+
+    private List<GameObject> _keys;
+    private GameObject _door;
+
+    public void GettingKey(GameObject key)
+    {
+        _keys.Remove(key);
+
+        if(_keys.Count == 0)
+        {
+            CreateDoor();
+        }
+    }
+
+    public void Victory()
+    {
+        SceneManager.LoadScene(1, LoadSceneMode.Single);
+    }
+
+    private void CreateDoor()
+    {
+        var pos = new Vector3(UnityEngine.Random.Range(1, 8),
+                0.56f, UnityEngine.Random.Range(1, 7));
+        _door = Instantiate(DoorPrefab, pos, Quaternion.identity) as GameObject;
+        _door.name = "door";
+    }
 
     void Start ()
     {
-        _cubesGen = new CubesGenerator(CubsGenPrefab);
+        _keys = new List<GameObject>();
 
-        _map = new List<GameObject>();
+        _time = 0;
 
-        _graph = new Graph();
+        //_cubesGen = new CubesGenerator(CubsGenPrefab);
+
+        _map = new List<Cell>();
 
         string path = Application.dataPath + "/Maps/" + Map;
-        _graph.ParseFromMap(path);
-        //_graph.CreateTest();
-        var connections = _graph.PathfindDijkstra(_graph._nodes[0], _graph._nodes[9]);
+        //InitMap(path);
 
-        InitMap(path);
+        CreateRandomMap(7, 8, 60);
+
+        _graph = new Graph();
+        _graph.ParseFromMap(_map);
+        
         //var points = GetPointsFromConnections(connections, true);
         _path = new Assets.Code.ai.Path(null);
+        _monsterPath = new Assets.Code.ai.Path(null);
 
         _character = new Agent(CharacterTransform);
+        _monster = new Agent(MonsterTransform);
 
         _followPath = new FollowPath(_path, 0.2f, _character, 3);
+        _monsterFollowPath = new FollowPath(_monsterPath, 0.2f, _monster, 3);
+
+        CreateKeys();
     }
 
     private void CreateRandomMap(int rows, int cols, int frequency)
@@ -53,7 +98,7 @@ public class PathFollowingScene : MonoBehaviour
         {
             foreach(var cell in _map)
             {
-                Destroy(cell);
+                cell.Dispose();
             }
 
             _map.Clear();
@@ -68,13 +113,19 @@ public class PathFollowingScene : MonoBehaviour
                 position.x = j * CellSize;
                 position.z = i * CellSize;
                 var t = UnityEngine.Random.Range(0, 100);
-                if (t > frequency)
+                int charX = Mathf.RoundToInt(CharacterTransform.position.x);
+                int charZ = Mathf.RoundToInt(CharacterTransform.position.z);
+                int monsterX = Mathf.RoundToInt(MonsterTransform.position.x);
+                int monsterZ = Mathf.RoundToInt(MonsterTransform.position.z);
+
+                if (t > frequency && charX != position.x && charZ != position.z
+                    && monsterX != position.x && monsterZ != position.z)
                 {
-                    _map.Add(Instantiate(ObstaclePrefab, position, Quaternion.identity) as GameObject);
+                    _map.Add(new Cell(Instantiate(ObstaclePrefab, position, Quaternion.identity) as GameObject, false));
                 }
                 else
                 {
-                    _map.Add(Instantiate(VertexPrefab, position, Quaternion.identity) as GameObject);
+                    _map.Add(new Cell(Instantiate(VertexPrefab, position, Quaternion.identity) as GameObject, true));
                 }
             }
         }
@@ -87,7 +138,7 @@ public class PathFollowingScene : MonoBehaviour
             StreamReader streamReader = new StreamReader(path);
             using (streamReader)
             {
-                _map = new List<GameObject>();
+                _map = new List<Cell>();
 
                 string line = streamReader.ReadLine();
                 line = streamReader.ReadLine();
@@ -109,11 +160,11 @@ public class PathFollowingScene : MonoBehaviour
 
                         if (line[j] == '.')
                         {
-                            _map.Add(Instantiate(VertexPrefab, position, Quaternion.identity) as GameObject);
+                            _map.Add(new Cell(Instantiate(VertexPrefab, position, Quaternion.identity) as GameObject, true));
                         }
                         else
                         {
-                            _map.Add(Instantiate(ObstaclePrefab, position, Quaternion.identity) as GameObject);
+                            _map.Add(new Cell(Instantiate(ObstaclePrefab, position, Quaternion.identity) as GameObject, false));
                         }
                     }
                 }
@@ -133,17 +184,13 @@ public class PathFollowingScene : MonoBehaviour
             {
                 foreach (var cell in _map)
                 {
-                    int j = (int)cell.transform.position.x / CellSize;
-                    int i = (int)cell.transform.position.z / CellSize;
+                    int j = (int)cell.Position.x / CellSize;
+                    int i = (int)cell.Position.z / CellSize;
 
                     var nodePos = node.GetPosition();
                     if ((int)nodePos.x == j && (int)nodePos.y == i)
                     {
-                        var rend = cell.GetComponent<Renderer>();
-                        if (rend != null)
-                        {
-                            rend.material.color = Color.green;
-                        }
+                        cell.ChangeColor(Color.green);
                     }
                 }
             }
@@ -172,21 +219,17 @@ public class PathFollowingScene : MonoBehaviour
         {
             foreach (var cell in _map)
             {
-                int j = (int)cell.transform.position.x / CellSize;
-                int i = (int)cell.transform.position.z / CellSize;
+                int j = (int)cell.Position.x / CellSize;
+                int i = (int)cell.Position.z / CellSize;
 
                 var nodePos = node.GetPosition();
                 if ((int)nodePos.x == j && (int)nodePos.y == i)
                 {
-                    points.Add(cell.transform);
+                    points.Add(cell.GameObject.transform);
 
                     if (drawPath)
                     {
-                        var rend = cell.GetComponent<Renderer>();
-                        if (rend != null)
-                        {
-                            rend.material.color = Color.red;
-                        }
+                        cell.ChangeColor(Color.red);
                     }
                 }
             }
@@ -194,10 +237,66 @@ public class PathFollowingScene : MonoBehaviour
 
         return points;
     }
-	
-	void Update ()
+
+    private void CreateKeys()
+    {
+        for (int i=0; i < 3; i++)
+        {
+            var pos = new Vector3(UnityEngine.Random.Range(1, 8),
+                0.56f, UnityEngine.Random.Range(1, 7));
+
+            var checkPos = false;
+            if(_keys.Count > 0)
+                checkPos = true;
+
+            while(checkPos)
+            {
+                pos = new Vector3(UnityEngine.Random.Range(1, 8),
+                    0.56f, UnityEngine.Random.Range(1, 7));
+
+                foreach (var key in _keys)
+                {
+                    if(key.transform.position == pos)
+                    {
+                        checkPos = true;
+                    } else
+                    {
+                        checkPos = false;
+                    }
+                }
+            }
+
+            var go = Instantiate(KeyPrefab, pos, Quaternion.identity) as GameObject;
+            go.name = "key";
+            _keys.Add(go);
+        }
+    }
+
+    void Update()
     {
         _character.Update(_followPath.GetSteering());
+
+        _monster.Update(_monsterFollowPath.GetSteering());
+
+        var posStartM = new Vector2(Mathf.Round(_monster.Transform.position.x), Mathf.Round(_monster.Transform.position.z));
+        var posEndM = new Vector2(_character.Transform.position.x, _character.Transform.position.z);
+        var nodeStartM = _graph.GetNodeByPosition(posStartM);
+        var nodeEndM = _graph.GetNodeByPosition(posEndM);
+
+        if (nodeStartM != null && nodeEndM != null)
+        {
+
+            var startNodeIdM = nodeStartM.GetId();
+            var endNodeIdM = nodeEndM.GetId();
+
+            var connectionsM = _graph.PathfindDijkstra(_graph._nodes[startNodeIdM], _graph._nodes[endNodeIdM]);
+            if (connectionsM != null)
+            {
+                var points = GetPointsFromConnections(connectionsM, true);
+                _monsterPath.AddNiewPoints(points);
+                _monsterFollowPath.UpdateTarget();
+            }
+        }
 
         if (Input.GetMouseButtonDown(0))
         {
@@ -208,26 +307,43 @@ public class PathFollowingScene : MonoBehaviour
                 int counter = 0;
                 foreach (var cell in _map)
                 {
-                    if (cell == hitInfo.transform.gameObject)
+                    if (cell.GameObject == hitInfo.transform.gameObject)
                     {
                         var posStart = new Vector2(Mathf.Round(_character.Transform.position.x), Mathf.Round(_character.Transform.position.z));
+                        var posEnd = new Vector2(cell.Position.x, cell.Position.z);
                         var nodeStart = _graph.GetNodeByPosition(posStart);
-                        var posEnd = new Vector2(cell.transform.position.x, cell.transform.position.z);
                         var nodeEnd = _graph.GetNodeByPosition(posEnd);
 
-                        var startNodeId = nodeStart.GetId();
-                        var endNodeId = nodeEnd.GetId();
+                        if (nodeStart != null && nodeEnd != null)
+                        {
 
-                        var connections = _graph.PathfindDijkstra(_graph._nodes[startNodeId], _graph._nodes[endNodeId]);
-                        var points = GetPointsFromConnections(connections, true);
-                        _path.AddNiewPoints(points);
-                        _followPath.UpdateTarget();
-                        break;
+                            var startNodeId = nodeStart.GetId();
+                            var endNodeId = nodeEnd.GetId();
+
+                            var connections = _graph.PathfindDijkstra(_graph._nodes[startNodeId], _graph._nodes[endNodeId]);
+                            if (connections != null)
+                            {
+                                var points = GetPointsFromConnections(connections, true);
+                                _path.AddNiewPoints(points);
+                                _followPath.UpdateTarget();
+                            }
+
+                            break;
+                        }
                     }
 
                     counter++;
                 }
             }
+        }
+
+        _time += Time.deltaTime;
+        if (_time > 5)
+        {
+            _time = 0;
+
+            CreateRandomMap(7, 8, 60);
+            _graph.ParseFromMap(_map);
         }
     }
 }
